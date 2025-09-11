@@ -4,12 +4,12 @@
 //
 //  Created by Admin on 12/07/22.
 //
-
+ 
 import UIKit
 import WebKit
-
-class WkWebViewController: UIViewController {
-
+ 
+class WkWebViewController: UIViewController, WKScriptMessageHandler {
+ 
     private var webView:WKWebView?
     private var popupWebView: WKWebView?
     public var url:String?
@@ -18,10 +18,15 @@ class WkWebViewController: UIViewController {
         super.viewDidLoad()
         setupWebView()
     }
-
+ 
     func setupWebView() {
-
+ 
+        let contentController = WKUserContentController()
+        contentController.add(self, name: "IDfyCaptureComplete")
+ 
         let webConfiguration = WKWebViewConfiguration()
+        webConfiguration.userContentController = contentController
+        
         if #available(iOS 14.0, *) {
             let preferences = WKWebpagePreferences()
             preferences.allowsContentJavaScript = true
@@ -38,7 +43,7 @@ class WkWebViewController: UIViewController {
         webView?.navigationDelegate = self
         self.view = webView
         loadWebView()
-
+ 
     }
     func loadWebView() {
         guard let url = URL(string: url ?? "") else { return }
@@ -61,7 +66,7 @@ extension WkWebViewController: WKUIDelegate,WKNavigationDelegate {
         return popupWebView!
         
     }
-
+ 
     /// Navigation action delegate
     /// - Parameters:
     ///   - webView: Web view using for loading link/url.
@@ -78,7 +83,17 @@ extension WkWebViewController: WKUIDelegate,WKNavigationDelegate {
         }
         decisionHandler(.allow)
     }
-
+ 
+    @objc(userContentController:didReceiveScriptMessage:) func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "IDfyCaptureComplete" {
+                if let payload = message.body as? [String: Any] {
+                    print("Received payload: \(payload)")
+                } else {
+                    print("Received: \(message.body)")
+                }
+            }
+        }
+ 
     func webViewDidClose(_ webView: WKWebView) {
         
         popupWebView?.removeFromSuperview()
